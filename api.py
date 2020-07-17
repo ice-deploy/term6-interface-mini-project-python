@@ -29,7 +29,7 @@ Exception-list:
 
 
 # NOTE: path-API
-#    # /debug/ [m1a,m1b,  m2a,m2b]
+#    # /debug/ [1a,1b,10,  2a,2b,20, f167, f2[ความถี่ Hz] 
 
 HatMdd10 = BedMotor.HatMdd10
 
@@ -76,6 +76,12 @@ def get_debug(mode):
         HatMdd10.m2BA()
     elif mode == "20":
         HatMdd10.m2Is0()
+        
+    elif mode[0] == "f":
+        if mode[1] == "1":
+            HatMdd10.changeFrequency1(int(mode[2:]))
+        elif mode[1] == "2":
+            HatMdd10.changeFrequency2(int(mode[2:]))
 
     return json.dumps({"dataStatus": "success"})
 
