@@ -1,91 +1,120 @@
 from flask import Flask, json, request
-import libs.bed_motor as BedMotor
-
-# import sys
-
-# # init-Flask:
-# sudo apt-get install python3-pip python3-dev 
-# sudo apt-get install python3-venv
-
-# python3 -m venv env
-
-# source env/bin/activate
-
-# pip install uwsgi flask
-
-# #check python-version
-# python --version
-# pip freeze
-
-'''
-v1(control-from-app)
-| api.py -> bed_motor.py(extend-M(HatMdd10)]) 
-                    -> drive_linear_motor.py(M[1,2][A,B])
-
-Exception-list:
-    - show //response and show in APP(Color=Yellow)
-    - Bug //response and show in APP(Color=Red)
-'''
+from threading import Thread
+import libs.drive_linear_motor as BedMotor
 
 
-# NOTE: path-API
-#    # /debug/ [1a,1b,10,  2a,2b,20, f167, f2[ความถี่ Hz] 
-
-HatMdd10 = BedMotor.HatMdd10
-
-api = Flask(__name__)
 # Flask-Env:
 # # on windows: set FLASK_APP=api.py
-# # on Linux: export FLASK_APP=api.py
+'''
+on Linux: export FLASK_APP=api.py
+on Linux: export FLASK_ENV=development
 
-# # on Linux: export FLASK_ENV=development
-# # on Linux: export FLASK_APP=bedmotor.py
+python3 api.py
+'''
 
-# Debug Mode:
-# # export FLASK_ENV=development
 # run:
 # # flask run
 # # flask run --host=0.0.0.0
 
-# python--import
-# https://docs.python.org/3/tutorial/modules.html#intra-package-references
-# from . import echo
-# from .. import formats
-# from ..filters import equalizer
+# NOTE: flask-API
+#    # /stop //for Stop Server (ฉุกเฉิน)
+#    # /debug/ [1a=rf,1b=rb,10=r0], [2a=lf,2b=lb,20=l0]
 
 
-# /debug/1a
-@api.route('/debug/<mode>', methods=['GET'])
-def get_debug(mode):
-    print("GET: /debug/"+mode)
+def shutdown_server():
+    func = request.environ.get('werkzeug.server.shutdown')
+    if func is None:
+        raise RuntimeError('Not running with the Werkzeug Server')
+    func()
 
-    # motor-1
-    if mode == "1a":
-        # attrs = vars(HatMdd10)
-        # print(attrs)
-        HatMdd10.m1AB()
-    elif mode == "1b":
-        HatMdd10.m1BA()
-    elif mode == "10":
-        HatMdd10.m1Is0()
 
-    # motor-2
-    elif mode == "2a":
-        HatMdd10.m2AB()
-    elif mode == "2b":
-        HatMdd10.m2BA()
-    elif mode == "20":
-        HatMdd10.m2Is0()
-        
-    elif mode[0] == "f":
-        if mode[1] == "1":
-            HatMdd10.changeFrequency1(int(mode[2:]))
-        elif mode[1] == "2":
-            HatMdd10.changeFrequency2(int(mode[2:]))
+def shutdown():
+    shutdown_server()
+    return 'Server shutting down...'
 
-    return json.dumps({"dataStatus": "success"})
+
+def create_app(HatMdd10):
+    # https://flask.palletsprojects.com/en/1.1.x/tutorial/factory/
+
+    app = Flask(__name__)
+
+    # Enable Cors for web-browser test
+    @app.after_request
+    def after_request(response):
+        header = response.headers
+        header['Access-Control-Allow-Origin'] = '*'
+        return response
+
+    # set response mimetype=JSON
+    def myRes(data, headerStatus=200):
+        response = app.response_class(
+            response=json.dumps(data),
+            status=headerStatus,
+            mimetype='application/json'
+        )
+        return response
+
+    # a simple page that says hello
+    @app.route('/')
+    def hello():
+        print("GET: /index")
+        return 'Hello, World!'
+
+    # http://127.0.0.1:5000/stop
+    @app.route('/stop', methods=['GET'])
+    def stop():
+        print("GET: /stop")
+        print("Shutdown: with Hard-STOP API(/stop")
+        shutdown()
+        return myRes({"dataStatus": "success", 'data': 'stoped'})
+
+    # /debug/ []
+    @app.route('/debug/<command>', methods=['GET'])
+    def get_debug(command):
+        print("GET: /debug/"+command)
+
+        # motor-1
+        if command == "1a":
+            HatMdd10.m1AB()
+            message = 'rf'
+        elif command == "1b":
+            HatMdd10.m1BA()
+            message = 'rb'
+        elif command == "10":
+            HatMdd10.m1Is0()
+            message = 'r0'
+
+        # motor-2
+        elif command == "2a":
+            HatMdd10.m2AB()
+            message = 'lf'
+        elif command == "2b":
+            HatMdd10.m2BA()
+            message = 'lb'
+        elif command == "20":
+            HatMdd10.m2Is0()
+            message = 'l0'
+
+        else:
+            return myRes({"dataStatus": "error", 'message': 'not command: ' + command}, 404)
+
+        return myRes({"dataStatus": "success", "message": message})
+
+    return app
+
+
+def main():
+    HatMdd10 = BedMotor.HatMdd10()
+    try:
+        app = create_app(HatMdd10)
+        app.run(host='0.0.0.0')
+    except Exception as err:
+        print(str(err.args))
+    except:
+        print('some Err: server is Stoped.')
+
+    HatMdd10.cleanup()
 
 
 if __name__ == '__main__':
-    # api.run()
-    api.run(host='0.0.0.0')
+    main()
