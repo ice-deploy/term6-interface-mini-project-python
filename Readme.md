@@ -10,9 +10,9 @@ git clone https://github.com/ice-deploy/term6-interface-mini-project-python.git 
 # next(Config raspberry Pi)
 ```
 
-# Tips
+# App Tips
 ```
-- หากติดตั้ง App ไม่ได้(ปัญหา android-auto ใน flutter) // https://support.google.com/androidauto/thread/8458247?hl=en
+- หากติดตั้ง App ไม่ได้(ปัญหา android-auto ใน flutter) ### https://support.google.com/androidauto/thread/8458247?hl=en
     - ให้ clear-cache ของ App [android auto, google play store] ในมือถือ
     - หลังจากนั้น uninstall, reInstall ไฟล์ APK ใหม่
 ```
