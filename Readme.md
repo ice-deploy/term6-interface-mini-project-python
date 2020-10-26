@@ -1,3 +1,15 @@
+# Get Started
+```bash
+# update GPIO-lib to latest-version
+
+# download code
+mkdir -p /home/pi/Desktop/dev-path--Pi3/tru-ice/mini-project-bed-motor/ && cd "$_"
+
+git clone https://github.com/ice-deploy/term6-interface-mini-project-python.git v2
+
+# next(Config raspberry Pi)
+```
+
 # Config raspberry Pi
 ## linux service(single-process)
 
