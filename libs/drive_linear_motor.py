@@ -1,13 +1,14 @@
 import atexit
+import threading
 
-import time
 import RPi.GPIO as GPIO
 
 
 # set ENV:
 PWM_DUTY_CYCLE = 100
 PWM_FREQUENCY = 100
-PWM_TIME_WAIT = 0.07
+
+dataLock = threading.Lock()
 
 
 class HatMdd10:
@@ -30,8 +31,6 @@ class HatMdd10:
         self.dutyCycle = dutyCycle
         # init-frequency
         self.frequency = f
-        # init-waitHardware
-        self.waitHardwareUpdate = PWM_TIME_WAIT
         # init-pin
         self.__pin_dir1 = 26
         self.__pin_dir2 = 24
@@ -56,9 +55,6 @@ class HatMdd10:
         # Listen-Cleanup()
         atexit.register(self.cleanup)
 
-    # wait Hardware
-    def waitHardware(self):
-        time.sleep(self.waitHardwareUpdate)
 
     # motor-All zero
     def mZero(self):
@@ -67,48 +63,48 @@ class HatMdd10:
 
     # motor-1 function
     def m1Is0(self):
-        self.m1.stop()
-        GPIO.output(self.__pin_dir1, GPIO.LOW)
-        # update state
-        self.stateM1 = 0
-        self.waitHardware()
+        with dataLock:
+            GPIO.output(self.__pin_dir1, GPIO.LOW)
+            self.m1.stop()
+            # update state
+            self.stateM1 = 0
 
     def m1AB(self):
-        self.m1.start(self.dutyCycle)
-        GPIO.output(self.__pin_dir1, GPIO.LOW)
-        # update state
-        self.stateM1 = 1
-        self.waitHardware()
+        with dataLock:
+            GPIO.output(self.__pin_dir1, GPIO.LOW)
+            self.m1.start(self.dutyCycle)
+            # update state
+            self.stateM1 = 1
 
     def m1BA(self):
-        self.m1.start(self.dutyCycle)
-        GPIO.output(self.__pin_dir1, GPIO.HIGH)
-        # update state
-        self.stateM1 = 1
-        self.waitHardware()
+        with dataLock:
+            GPIO.output(self.__pin_dir1, GPIO.HIGH)
+            self.m1.start(self.dutyCycle)
+            # update state
+            self.stateM1 = 1
 
     # motor-2 function
     def m2Is0(self):
-        self.m2.stop()
-        GPIO.output(self.__pin_dir2, GPIO.LOW)
-        # update state
-        self.stateM2 = 0
-        self.waitHardware()
+        with dataLock:
+            GPIO.output(self.__pin_dir2, GPIO.LOW)
+            self.m2.stop()
+            # update state
+            self.stateM2 = 0
 
     def m2AB(self):
-        self.m2.start(self.dutyCycle)
-        GPIO.output(self.__pin_dir2, GPIO.LOW)
-        # update state
-        self.stateM2 = 1
-        self.waitHardware()
+        with dataLock:
+            GPIO.output(self.__pin_dir2, GPIO.LOW)
+            self.m2.start(self.dutyCycle)
+            # update state
+            self.stateM2 = 1
 
     def m2BA(self):
-        # control motor
-        self.m2.start(self.dutyCycle)
-        GPIO.output(self.__pin_dir2, GPIO.HIGH)
-        # update state
-        self.stateM2 = 1
-        self.waitHardware()
+        with dataLock:
+            # control motor
+            GPIO.output(self.__pin_dir2, GPIO.HIGH)
+            self.m2.start(self.dutyCycle)
+            # update state
+            self.stateM2 = 1
 
     def _stopPwm(self):
         self.m1.stop()
@@ -123,7 +119,6 @@ class HatMdd10:
         self._stopDir()
         self.stateM1 = 0
         self.stateM2 = 0
-        self.waitHardware()
 
     def cleanup(self):
         print("Running cleanup...")
@@ -133,7 +128,7 @@ class HatMdd10:
         except Exception as err:
             print("!!!!HatMdd10::cleanup() more one times..")
             print(str(err.args))
-        except:
+        else:
             print("!!!!HatMdd10::cleanup() more one times..")
             print("Other error when HatMdd10::cleanup()!")
         print("HatMdd10::cleanup()")
@@ -180,7 +175,7 @@ def main():
     except Exception as err:
         print(str(err.args))
 
-    except:
+    else:
         print("Other error[in Main()] or exception occurred!")
 
     motor.cleanup()
