@@ -10,6 +10,12 @@ git clone https://github.com/ice-deploy/term6-interface-mini-project-python.git 
 # next(Config raspberry Pi)
 ```
 
+# Raspberry-Pi Tips
+```
+- การดูสถานะการทำงานของ ขา(pin) ต่างๆ
+watch -n 0.2 gpio readall 
+```
+
 # App Tips
 ```
 - หากติดตั้ง App ไม่ได้(ปัญหา android-auto ใน flutter) ### https://support.google.com/androidauto/thread/8458247?hl=en
